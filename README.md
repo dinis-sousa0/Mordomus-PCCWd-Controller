@@ -1,0 +1,1 @@
+purpose of this software is to be able to control the various modules connected to the mordomus gen1 (PCCWd) module, for integration with applications such as home assistant, as opposed to having to use the proprietary application
