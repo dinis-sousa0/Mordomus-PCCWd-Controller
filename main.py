@@ -72,45 +72,45 @@ def run_serial_example():
                     print()
                     break
 
-            if not user_input:
-                continue
-
-            if user_input.lower() in ('exit', 'quit'):
-                break
-
-            # Parse input format
-            payload = None
-            if user_input.lower().startswith('t:'):
-                # Force plain text ASCII
-                text_val = user_input[2:]
-                payload = text_val.encode('utf-8')
-                print(f">>> [Sending ASCII]: {payload}")
-            elif user_input.lower().startswith('h:'):
-                # Force hex
-                hex_val = user_input[2:].replace(" ", "").replace("\\x", "").replace("0x", "")
-                try:
-                    payload = bytes.fromhex(hex_val)
-                    print(f">>> [Sending Hex]: {payload.hex().upper()}")
-                except ValueError as e:
-                    print(f"Error: Invalid hex format after prefix: {e}")
+                if not user_input:
                     continue
-            else:
-                # automatic detection: try hex first, fallback to ASCII
-                cleaned = user_input.replace(" ", "").replace("\\x", "").replace("0x", "")
-                try:
-                    payload = bytes.fromhex(cleaned)
-                    print(f">>> [Sending Hex]: {payload.hex().upper()}")
-                except ValueError:
-                    payload = user_input.encode('utf-8')
-                    print(f">>> [Sending ASCII]: {payload}")
 
-            if payload:
-                try:
-                    ser.write(payload)
-                    #give the device a brief moment before user can type again
-                    time.sleep(0.05)
-                except Exception as e:
-                    print(f"Error writing to serial port: {e}")
+                if user_input.lower() in ('exit', 'quit'):
+                    break
+
+                # Parse input format
+                payload = None
+                if user_input.lower().startswith('t:'):
+                    # Force plain text ASCII
+                    text_val = user_input[2:]
+                    payload = text_val.encode('utf-8')
+                    print(f">>> [Sending ASCII]: {payload}")
+                elif user_input.lower().startswith('h:'):
+                    # Force hex
+                    hex_val = user_input[2:].replace(" ", "").replace("\\x", "").replace("0x", "")
+                    try:
+                        payload = bytes.fromhex(hex_val)
+                        print(f">>> [Sending Hex]: {payload.hex().upper()}")
+                    except ValueError as e:
+                        print(f"Error: Invalid hex format after prefix: {e}")
+                        continue
+                else:
+                    # automatic detection: try hex first, fallback to ASCII
+                    cleaned = user_input.replace(" ", "").replace("\\x", "").replace("0x", "")
+                    try:
+                        payload = bytes.fromhex(cleaned)
+                        print(f">>> [Sending Hex]: {payload.hex().upper()}")
+                    except ValueError:
+                        payload = user_input.encode('utf-8')
+                        print(f">>> [Sending ASCII]: {payload}")
+
+                if payload:
+                    try:
+                        ser.write(payload)
+                        #give the device a brief moment before user can type again
+                        time.sleep(0.05)
+                    except Exception as e:
+                        print(f"Error writing to serial port: {e}")
 
         else:
             # select from predefined commands
