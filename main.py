@@ -4,6 +4,7 @@ import threading
 import sys
 
 # parameters
+MODE = bool(int(sys.argv[1])) if len(sys.argv) > 1 else False  # true for interactive mode, false for non-interactive
 PORT = str(input("Enter the COM port (empty for default): ")).strip()  #prompt user for COM port
 if PORT == '':
     PORT = 'COM1'       
@@ -63,12 +64,13 @@ def run_serial_example():
         read_thread = threading.Thread(target=read_loop, args=(ser, stop_event), daemon=True)
         read_thread.start()
 
-        while True:
-            try:
-                user_input = input(">>> Enter command: ").strip()
-            except (KeyboardInterrupt, EOFError):
-                print()
-                break
+        if MODE:
+            while True:
+                try:
+                    user_input = input(">>> Enter command: ").strip()
+                except (KeyboardInterrupt, EOFError):
+                    print()
+                    break
 
             if not user_input:
                 continue
@@ -110,6 +112,15 @@ def run_serial_example():
                 except Exception as e:
                     print(f"Error writing to serial port: {e}")
 
+        else:
+            # select from predefined commands
+            ID = int(input("Enter the blind ID (0-255): ").strip())
+            PERCENT = int(input("Enter the percent (0-100): ").strip())
+            command = send_blinds(ID, PERCENT)
+            print(f">>> [Sending Predefined Command]: {command.hex().upper()}")
+            ser.write(command)
+            time.sleep(0.1)  # Allow time for the command to be sent
+
         # Clean shutdown
         print("Stopping reader thread and closing port...")
         stop_event.set()
@@ -119,6 +130,17 @@ def run_serial_example():
 
     except serial.SerialException as e:
         print(f"Serial connection error: {e}")
+
+def send_blinds(id,percent):
+    """Send a command to the blinds controller."""
+
+    id = hex(id) if isinstance(id, int) else id
+    percent = hex(percent) if isinstance(percent, int) else percent
+    # Construct the command based on id and percent
+    command = b'\xAA'+bytes.fromhex(id[2:]) + bytes.fromhex(percent[2:]) #AA is the start byte, followed by id and percentage of opening
+    return command
+
+    
 
 if __name__ == '__main__':
     run_serial_example()
