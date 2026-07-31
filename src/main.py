@@ -1,7 +1,7 @@
 import time
-from src.config import load_config
-from src.mordomus import MordomusTransport
-from src.mqtt_handler import HomeAssistantMQTT
+from config import load_config
+from mordomus import MordomusTransport
+from mqtt_handler import HomeAssistantMQTT
 
 
 def main():
