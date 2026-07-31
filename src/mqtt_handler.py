@@ -7,6 +7,13 @@ ACTIONS = {
     0x03: "long_press"
 }
 
+MORDOMUS_GATEWAY_DEVICE = {
+    "identifiers": ["mordomus_gateway_main"],
+    "name": "Mordomus Domótica",
+    "model": "PCCWd TCP Gateway",
+    "manufacturer": "Mordomus",
+}
+
 
 class HomeAssistantMQTT:
 
@@ -47,10 +54,7 @@ class HomeAssistantMQTT:
                 "state_topic": f"mordomus/light/{dev_id}/state",
                 "payload_on": "ON",
                 "payload_off": "OFF",
-                "device": {
-                    "identifiers": [f"mordomus_module_{dev_id}"],
-                    "name": "Mordomus Domótica",
-                },
+                "device": MORDOMUS_GATEWAY_DEVICE,
             }
             self.client.publish(topic, json.dumps(payload), retain=True)
 
@@ -67,10 +71,7 @@ class HomeAssistantMQTT:
                 "set_position_topic": f"mordomus/blind/{dev_id}/set_position",
                 "position_open": 100,
                 "position_closed": 0,
-                "device": {
-                    "identifiers": [f"mordomus_module_{dev_id}"],
-                    "name": "Mordomus Domótica",
-                },
+                "device": MORDOMUS_GATEWAY_DEVICE,
             }
             self.client.publish(topic, json.dumps(payload), retain=True)
 
@@ -84,10 +85,7 @@ class HomeAssistantMQTT:
                 "unique_id": f"mordomus_input_{dev_id}",
                 "state_topic": f"mordomus/input/{dev_id}/event",
                 "event_types": ["single_press", "double_press", "long_press"],
-                "device": {
-                    "identifiers": [f"mordomus_module_{dev_id}"],
-                    "name": "Mordomus Domótica",
-                },
+                "device": MORDOMUS_GATEWAY_DEVICE,
             }
             self.client.publish(topic, json.dumps(payload), retain=True)
 
