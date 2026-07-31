@@ -18,3 +18,11 @@ blinds:
 lights:
   3 : "Example light 1"
   4 : "Example light 2"
+  5 : "blank"
+
+# ID Switches
+inputs:
+  1 : "Example switch 1"
+  2 : "Example switch 2"
+
+#note, if name given is "blank", the entity will be ignored

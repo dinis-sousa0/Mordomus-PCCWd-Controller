@@ -18,6 +18,7 @@ def main():
 
     lights = cfg.get("lights", {})
     blinds = cfg.get("blinds", {})
+    inputs = cfg.get("inputs", {})
 
     #TCP Layer
     transport = MordomusTransport(ip=ws_ip, port=ws_port, inter_frame_delay=0.05) #delay between commands
@@ -31,6 +32,7 @@ def main():
         password=mq_pass,
         lights=lights,
         blinds=blinds,
+        inputs=inputs,
         transport=transport,
     )
     mqtt_service.start()

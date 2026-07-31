@@ -1,14 +1,21 @@
 import json
 import paho.mqtt.client as mqtt
 
+ACTIONS = {
+    0x01: "single_press",
+    0x02: "double_press",
+    0x03: "long_press"
+}
+
 
 class HomeAssistantMQTT:
 
-    def __init__(self, broker: str, port: int, user: str, password: str, lights: dict, blinds: dict, transport):
+    def __init__(self, broker: str, port: int, user: str, password: str, lights: dict, blinds: dict, inputs: dict, transport):
         self.broker = broker
         self.port = port
         self.lights = lights
         self.blinds = blinds
+        self.inputs = inputs
         self.transport = transport
 
         self.client = mqtt.Client()
@@ -42,7 +49,7 @@ class HomeAssistantMQTT:
                 "payload_off": "OFF",
                 "device": {
                     "identifiers": [f"mordomus_module_{dev_id}"],
-                    "name": "Mordomus System",
+                    "name": "Mordomus Domótica",
                 },
             }
             self.client.publish(topic, json.dumps(payload), retain=True)
@@ -62,7 +69,24 @@ class HomeAssistantMQTT:
                 "position_closed": 0,
                 "device": {
                     "identifiers": [f"mordomus_module_{dev_id}"],
-                    "name": "Mordomus System",
+                    "name": "Mordomus Domótica",
+                },
+            }
+            self.client.publish(topic, json.dumps(payload), retain=True)
+
+        # Discover Inputs/Switches
+        for dev_id, name in self.inputs.items():
+            if str(name).lower() == "blank":
+                continue
+            topic = f"homeassistant/event/mordomus_input_{dev_id}/config"
+            payload = {
+                "name": f"Interruptor {name}",
+                "unique_id": f"mordomus_input_{dev_id}",
+                "state_topic": f"mordomus/input/{dev_id}/event",
+                "event_types": ["single_press", "double_press", "long_press"],
+                "device": {
+                    "identifiers": [f"mordomus_module_{dev_id}"],
+                    "name": "Mordomus Domótica",
                 },
             }
             self.client.publish(topic, json.dumps(payload), retain=True)
@@ -100,16 +124,13 @@ class HomeAssistantMQTT:
 
     def _handle_hardware_telemetry(self, raw_bytes: bytes):
         """Parses byte frames pushed from Mordomus hardware to update HA."""
-        for i in range(0, len(raw_bytes), 3):
-            chunk = raw_bytes[i : i + 3]
-            if len(chunk) == 3 and chunk[0] == 0xAA:
-                dev_id, val = chunk[1], chunk[2]
-                if dev_id in self.lights:
-                    state = "ON" if val == 0x64 else "OFF"
-                    self.client.publish(
-                        f"mordomus/light/{dev_id}/state", state, retain=True
-                    )
-                elif dev_id in self.blinds:
-                    self.client.publish(
-                        f"mordomus/blind/{dev_id}/position", val, retain=True
-                    )
+        # 5-byte Input frame: 0x49 0xAA [ID] [ACTION] 0x46
+        if len(raw_bytes) == 5 and raw_bytes[0] == 0x49 and raw_bytes[1] == 0xAA and raw_bytes[4] == 0x46:
+            dev_id = raw_bytes[2]
+            action_code = raw_bytes[3]
+            event_type = ACTIONS.get(action_code)
+
+            if event_type and dev_id in self.inputs:
+                print(f"[TCP IN] Input {dev_id} triggered: {event_type}")
+                payload = json.dumps({"event_type": event_type})
+                self.client.publish(f"mordomus/input/{dev_id}/event", payload)

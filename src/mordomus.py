@@ -14,6 +14,7 @@ class MordomusTransport:
         self.cmd_queue = queue.Queue()
         self.on_telemetry_callback = None
         self._running = False
+        self._buffer = bytearray()
 
     def connect(self):
         print(f"[TCP] Connecting to Waveshare Bridge at {self.ip}:{self.port}...")
@@ -50,8 +51,30 @@ class MordomusTransport:
             try:
                 if self.socket:
                     data = self.socket.recv(1024)
-                    if data and self.on_telemetry_callback:
-                        self.on_telemetry_callback(data)
+                    if not data:
+                        raise ConnectionResetError("Gateway closed connection")
+
+                    self._buffer.extend(data)
+
+                    # Parser
+                    while len(self._buffer) >= 3:
+                        #Case Input Frame (0x49 0xAA [ID] [Click] 0x46) ---
+                        if self._buffer[0] == 0x49:
+                            if len(self._buffer) < 5:
+                                break  # Wait for remaining bytes to arrive
+                            
+                            if self._buffer[1] == 0xAA and self._buffer[4] == 0x46:
+                                frame = bytes(self._buffer[:5])
+                                self._buffer = self._buffer[5:]
+                                if self.on_telemetry_callback:
+                                    self.on_telemetry_callback(frame)
+                            else:
+                                # Invalid sync sequence, drop 1 byte
+                                self._buffer.pop(0)
+
+                        # Unrecognized Byte
+                        else:
+                            self._buffer.pop(0)
             except socket.timeout:
                 pass
             except Exception as e:
