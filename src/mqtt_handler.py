@@ -56,6 +56,7 @@ class HomeAssistantMQTT:
                 "payload_off": "OFF",
                 "device": MORDOMUS_GATEWAY_DEVICE,
             }
+            self.client.publish(topic, "", retain=True) #purge old entities
             self.client.publish(topic, json.dumps(payload), retain=True)
 
         # Discover Blinds
@@ -73,6 +74,7 @@ class HomeAssistantMQTT:
                 "position_closed": 0,
                 "device": MORDOMUS_GATEWAY_DEVICE,
             }
+            self.client.publish(topic, "", retain=True) #purge old entities
             self.client.publish(topic, json.dumps(payload), retain=True)
 
         # Discover Inputs/Switches
@@ -87,6 +89,7 @@ class HomeAssistantMQTT:
                 "event_types": ["single_press", "double_press", "long_press"],
                 "device": MORDOMUS_GATEWAY_DEVICE,
             }
+            self.client.publish(topic, "", retain=True) #purge old entities
             self.client.publish(topic, json.dumps(payload), retain=True)
 
     def _on_connect(self, client, userdata, flags, rc):
