@@ -1,0 +1,20 @@
+waveshare:
+  ip: "192.168.1.200"    # Waveshare RS232-Eth bridge IP address
+  port: 4196             # Correspondent IP port
+
+mqtt:
+  broker: "localhost"    # IP of Mosquitto broker on Ubuntu
+  port: 1883
+  username: ""           # Leave blank if no auth
+  password: ""
+
+# ID blinds
+blinds:
+  1 : "Example blind 1"
+  2 : "Example blind 2
+
+
+# ID lights
+lights:
+  3 : "Example light 1"
+  4 : "Example light 2"
