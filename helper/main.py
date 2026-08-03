@@ -55,8 +55,9 @@ def convert_csv_to_yaml(
         except Exception as e:
             print(f"[WARNING] Could not read existing {output_filepath}, using default template: {e}")
 
+    lights = {}
+    blinds= {}
     inputs = {}
-    outputs = {}
     mappings = {}
 
     try:
@@ -82,8 +83,39 @@ def convert_csv_to_yaml(
         print(f"[ERROR] Could not find CSV file '{filepath_input}'.")
         return
 
+
     try:
-        with open(filepath_func, mode="r", encoding="utf-8-sig") as f:
+        with open(filepath_output, mode="r", encoding="iso-8859-1") as f:
+            reader = csv.DictReader(f, delimiter=";")
+            
+            for row in reader:
+                #skip useless columns
+                if row.get("Estado")!="True":
+                    continue
+
+                raw_adde = row["ADDE"].strip()
+                raw_desc = row["Descricao"].strip()
+
+                if not raw_adde.isdigit() or not raw_desc:
+                    continue
+
+                inp_id = int(raw_adde)
+
+                if row.get("Tipo") == "1":
+                    lights[inp_id] = raw_desc
+                elif row.get("Tipo") == "2":
+                    blinds[inp_id] = raw_desc
+                else:
+                    print(f"[WARNING] Unknown type for ADDE {inp_id}: {row.get('Tipo')}")
+                    continue
+
+    except FileNotFoundError:
+        print(f"[ERROR] Could not find CSV file '{filepath_output}'.")
+        return
+    
+
+    try:
+        with open(filepath_func, mode="r", encoding="iso-8859-1") as f:
             reader = csv.DictReader(f, delimiter=";")
             
             for row in reader:
@@ -128,6 +160,8 @@ def convert_csv_to_yaml(
         return
 
     #convert into the config file for write
+    base_config["blinds"] = blinds
+    base_config["lights"] = lights
     base_config["inputs"] = inputs
     base_config["mappings"] = mappings
 
