@@ -26,6 +26,10 @@ DEFAULT_CONFIG = {
     "mappings": {}
 }
 
+def prompt_val(label, default_val):
+    #help prompt if needed
+    val = input(f"Enter {label} [{default_val}]: ").strip()
+    return val if val != "" else default_val
 
 def convert_csv_to_yaml(
         filepath_input="mods_input.csv",
@@ -34,15 +38,6 @@ def convert_csv_to_yaml(
         output_filepath="config.yaml"
         ):
 
-    prompt_input = input(f"Enter the input CSV file name [{filepath_input}]: ").strip()
-    prompt_output = input(f"Enter the input functions CSV file name [{filepath_output}]: ").strip()
-    prompt_func = input(f"Enter the input functions CSV file name [{filepath_func}]: ").strip()
-    if prompt_input :
-        filepath_input = prompt_input
-    if prompt_output:
-        filepath_output = prompt_output
-    if prompt_func:
-        filepath_func = prompt_func
 
     # Load existing config.yaml to preserve light/blind definitions if present
     base_config = DEFAULT_CONFIG.copy()
@@ -54,6 +49,43 @@ def convert_csv_to_yaml(
                     base_config.update(existing)
         except Exception as e:
             print(f"[WARNING] Could not read existing {output_filepath}, using default template: {e}")
+
+    ws_curr = base_config.get("waveshare", DEFAULT_CONFIG["waveshare"])
+    mq_curr = base_config.get("mqtt", DEFAULT_CONFIG["mqtt"])
+
+    # 2. Prompt for Waveshare & MQTT settings
+    print("\n--- Network & Gateway Configuration ---")
+    ws_ip = prompt_val("Waveshare IP", ws_curr.get("ip", "192.168.1.200"))
+    ws_port = prompt_val("Waveshare Port", ws_curr.get("port", 4196))
+
+    print("\n--- MQTT Broker Configuration ---")
+    mq_broker = prompt_val("MQTT Broker Host", mq_curr.get("broker", "localhost"))
+    mq_port = prompt_val("MQTT Port", mq_curr.get("port", 1883))
+    mq_user = prompt_val("MQTT Username", mq_curr.get("username", ""))
+    mq_pass = prompt_val("MQTT Password", mq_curr.get("password", ""))
+
+    # Write network configuration back to dictionary
+    base_config["waveshare"] = {
+        "ip": ws_ip,
+        "port": int(ws_port) if str(ws_port).isdigit() else ws_port
+    }
+    base_config["mqtt"] = {
+        "broker": mq_broker,
+        "port": int(mq_port) if str(mq_port).isdigit() else mq_port,
+        "username": mq_user,
+        "password": mq_pass
+    }
+
+
+    prompt_input = input(f"Enter the input CSV file name [{filepath_input}]: ").strip()
+    prompt_output = input(f"Enter the input functions CSV file name [{filepath_output}]: ").strip()
+    prompt_func = input(f"Enter the input functions CSV file name [{filepath_func}]: ").strip()
+    if prompt_input :
+        filepath_input = prompt_input
+    if prompt_output:
+        filepath_output = prompt_output
+    if prompt_func:
+        filepath_func = prompt_func
 
     lights = {}
     blinds= {}
