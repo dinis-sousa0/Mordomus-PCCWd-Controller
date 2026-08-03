@@ -221,4 +221,5 @@ __marimo__/
 
 /old
 /test
-*config.yaml
+*.yaml
+*.csv
