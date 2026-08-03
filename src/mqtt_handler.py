@@ -17,13 +17,17 @@ MORDOMUS_GATEWAY_DEVICE = {
 
 class HomeAssistantMQTT:
 
-    def __init__(self, broker: str, port: int, user: str, password: str, lights: dict, blinds: dict, inputs: dict, transport):
+    def __init__(self, broker: str, port: int, user: str, password: str, lights: dict, blinds: dict, inputs: dict, mappings: dict, transport):
         self.broker = broker
         self.port = port
         self.lights = lights
         self.blinds = blinds
         self.inputs = inputs
+        self.mappings = mappings
         self.transport = transport
+
+        # In-memory state tracking to sync wall button presses
+        self.light_states = {dev_id: "OFF" for dev_id in self.lights}
 
         self.client = mqtt.Client()
         if user and password:
@@ -107,7 +111,8 @@ class HomeAssistantMQTT:
         val = 0x01
         if device_type == "light":
             val = 0x64 if payload == "ON" else 0x01
-            # Optimistically update HA state
+            # Track state internally and publish to HA
+            self.light_states[dev_id] = payload
             self.client.publish(
                 f"mordomus/light/{dev_id}/state", payload, retain=True
             )
@@ -133,5 +138,34 @@ class HomeAssistantMQTT:
 
             if event_type and dev_id in self.inputs:
                 print(f"[TCP IN] Input {dev_id} triggered: {event_type}")
+
+                #publish HA Event entity
                 payload = json.dumps({"event_type": event_type})
                 self.client.publish(f"mordomus/input/{dev_id}/event", payload)
+
+                #Check input mapping for this specific trigger action
+                if dev_id in self.mappings:
+                    btn_mapping = self.mappings[dev_id]
+                    target_light_id = None
+
+                    if isinstance(btn_mapping, dict):
+                        target_light_id = btn_mapping.get(event_type)
+                    elif isinstance(btn_mapping, int) and event_type == "single_press":
+                        #fallback for simple integer mapping defaulting to single_press
+                        target_light_id = btn_mapping
+
+                    # Normalize to list to support single or multiple target lights
+                    if target_light_id is not None:
+                        targets = target_light_id if isinstance(target_light_id, list) else [target_light_id]
+
+                        for tid in targets:
+                            if tid in self.lights:
+                                current_state = self.light_states.get(tid, "OFF")
+                                new_state = "OFF" if current_state == "ON" else "ON"
+                                self.light_states[tid] = new_state
+
+                                #pub2mqtt
+                                self.client.publish(
+                                    f"mordomus/light/{tid}/state", new_state, retain=True
+                                )
+                                print(f"[SYNC] Input {dev_id} ({event_type}) toggled Light {tid} -> {new_state}")

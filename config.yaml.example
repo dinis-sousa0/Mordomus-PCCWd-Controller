@@ -25,4 +25,14 @@ inputs:
   1 : "Example switch 1"
   2 : "Example switch 2"
 
+mappings:
+  1:
+    single_press : 1
+    double_press : 2
+    long_press : 3
+  2:
+    single_press : 4
+    double_press : 5
+    long_press : 6
+
 #note, if name given is "blank", the entity will be ignored
