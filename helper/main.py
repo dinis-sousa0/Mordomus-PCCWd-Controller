@@ -34,21 +34,22 @@ def prompt_val(label, default_val):
 def convert_csv_to_yaml(
         filepath_input="mods_input.csv",
         filepath_output="mods_output.csv",
-        filepath_func="mods_input_func.csv",
-        output_filepath="config.yaml"
+        filepath_func="mods_input_func.csv"
         ):
 
-
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    PARENT_DIR = os.path.dirname(SCRIPT_DIR)
+    DEFAULT_OUTPUT = os.path.join(PARENT_DIR, "config.yaml")
     # Load existing config.yaml to preserve light/blind definitions if present
     base_config = DEFAULT_CONFIG.copy()
-    if os.path.exists(output_filepath):
+    if os.path.exists(DEFAULT_OUTPUT):
         try:
-            with open(output_filepath, "r", encoding="utf-8") as f:
+            with open(DEFAULT_OUTPUT, "r", encoding="utf-8") as f:
                 existing = yaml.safe_load(f)
                 if isinstance(existing, dict):
                     base_config.update(existing)
         except Exception as e:
-            print(f"[WARNING] Could not read existing {output_filepath}, using default template: {e}")
+            print(f"[WARNING] Could not read existing {DEFAULT_OUTPUT}, using default template: {e}")
 
     ws_curr = base_config.get("waveshare", DEFAULT_CONFIG["waveshare"])
     mq_curr = base_config.get("mqtt", DEFAULT_CONFIG["mqtt"])
@@ -198,10 +199,10 @@ def convert_csv_to_yaml(
     base_config["mappings"] = mappings
 
     # export the yaml
-    with open(output_filepath, "w", encoding="utf-8") as f:
+    with open(DEFAULT_OUTPUT, "w", encoding="utf-8") as f:
         yaml.dump(base_config, f, sort_keys=False, default_flow_style=False, allow_unicode=True)
 
-    print(f"[SUCCESS] Exported full configuration to {output_filepath}")
+    print(f"[SUCCESS] Exported full configuration to {DEFAULT_OUTPUT}")
 
 
 if __name__ == "__main__":
