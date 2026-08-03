@@ -22,7 +22,7 @@ def main():
     mappings = cfg.get("mappings", {})
 
     #TCP Layer
-    transport = MordomusTransport(ip=ws_ip, port=ws_port, inter_frame_delay=0.05) #delay between commands
+    transport = MordomusTransport(ip=ws_ip, port=ws_port, inter_frame_delay=0.10) #delay between commands
     transport.connect()
 
     #MQTT Broker Layer

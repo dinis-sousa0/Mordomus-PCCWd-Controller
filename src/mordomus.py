@@ -6,7 +6,7 @@ import time
 
 class MordomusTransport:
 
-    def __init__(self, ip: str, port: int, inter_frame_delay: float = 0.05):
+    def __init__(self, ip: str, port: int, inter_frame_delay: float = 0.10):
         self.ip = ip
         self.port = port
         self.delay = inter_frame_delay
@@ -19,6 +19,10 @@ class MordomusTransport:
     def connect(self):
         print(f"[TCP] Connecting to Waveshare Bridge at {self.ip}:{self.port}...")
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
+        #no nagle to force single packet sending
+        self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        
         self.socket.settimeout(2.0)
         self.socket.connect((self.ip, self.port))
         self._running = True
