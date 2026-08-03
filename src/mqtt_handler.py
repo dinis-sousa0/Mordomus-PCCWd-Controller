@@ -46,19 +46,38 @@ class HomeAssistantMQTT:
     def _publish_discovery(self):
         print("[MQTT] Publishing Home Assistant Auto-Discovery entities...")
 
+        #register Main Gateway Status Diagnostic Entity, to make sure parent via_device exists
+        gw_topic = "homeassistant/sensor/mordomus_gateway/config"
+        gw_payload = {
+            "name": "Gateway Status",
+            "unique_id": "mordomus_gateway_status",
+            "state_topic": "mordomus/gateway/status",
+            "entity_category": "diagnostic",
+            "device": MORDOMUS_GATEWAY_DEVICE,
+        }
+        self.client.publish(gw_topic, "", retain=True)
+        self.client.publish(gw_topic, json.dumps(gw_payload), retain=True)
+        self.client.publish("mordomus/gateway/status", "online", retain=True)
+
         # Discover Lights
         for dev_id, name in self.lights.items():
             if name.lower() == "blank":
                 continue
             topic = f"homeassistant/light/mordomus_{dev_id}/config"
             payload = {
-                "name": f"Luz {name}",
+                "name": None,  #setting name to None causes HA to take the sub-device name cleanly
                 "unique_id": f"mordomus_light_{dev_id}",
                 "command_topic": f"mordomus/light/{dev_id}/set",
                 "state_topic": f"mordomus/light/{dev_id}/state",
                 "payload_on": "ON",
                 "payload_off": "OFF",
-                "device": MORDOMUS_GATEWAY_DEVICE,
+                "device": {
+                    "identifiers": [f"mordomus_light_{dev_id}"],
+                    "name": f"Luz {name}",
+                    "model": "OFxWD Light Module",
+                    "manufacturer": "Mordomus",
+                    "via_device": "mordomus_gateway_main",
+                },
             }
             self.client.publish(topic, "", retain=True) #purge old entities
             self.client.publish(topic, json.dumps(payload), retain=True)
@@ -69,14 +88,20 @@ class HomeAssistantMQTT:
                 continue
             topic = f"homeassistant/cover/mordomus_{dev_id}/config"
             payload = {
-                "name": f"Persiana {name}",
+                "name": None,
                 "unique_id": f"mordomus_blind_{dev_id}",
                 "command_topic": f"mordomus/blind/{dev_id}/set",
                 "position_topic": f"mordomus/blind/{dev_id}/position",
                 "set_position_topic": f"mordomus/blind/{dev_id}/set_position",
                 "position_open": 100,
                 "position_closed": 0,
-                "device": MORDOMUS_GATEWAY_DEVICE,
+                "device": {
+                    "identifiers": [f"mordomus_blind_{dev_id}"],
+                    "name": f"Persiana {name}",
+                    "model": "WINW3D Cover Module",
+                    "manufacturer": "Mordomus",
+                    "via_device": "mordomus_gateway_main",
+                },
             }
             self.client.publish(topic, "", retain=True) #purge old entities
             self.client.publish(topic, json.dumps(payload), retain=True)
@@ -87,11 +112,17 @@ class HomeAssistantMQTT:
                 continue
             topic = f"homeassistant/event/mordomus_input_{dev_id}/config"
             payload = {
-                "name": f"Interruptor {name}",
+                "name": None,
                 "unique_id": f"mordomus_input_{dev_id}",
                 "state_topic": f"mordomus/input/{dev_id}/event",
                 "event_types": ["single_press", "double_press", "long_press"],
-                "device": MORDOMUS_GATEWAY_DEVICE,
+                "device": {
+                    "identifiers": [f"mordomus_input_{dev_id}"],
+                    "name": f"Interruptor {name}",
+                    "model": "INxxWD Input Module",
+                    "manufacturer": "Mordomus",
+                    "via_device": "mordomus_gateway_main",
+                },
             }
             self.client.publish(topic, "", retain=True) #purge old entities
             self.client.publish(topic, json.dumps(payload), retain=True)
