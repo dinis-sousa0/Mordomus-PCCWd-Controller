@@ -6,6 +6,9 @@ import time
 
 class MordomusTransport:
 
+    #Frame sent to the bridge right after a connection is established
+    BOOT_COMMAND = bytes([0x57, 0x01, 0x64])
+
     def __init__(self, ip: str, port: int, inter_frame_delay: float = 0.10):
         self.ip = ip
         self.port = port
@@ -19,10 +22,10 @@ class MordomusTransport:
     def connect(self):
         print(f"[TCP] Connecting to Waveshare Bridge at {self.ip}:{self.port}...")
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        
+
         #no nagle to force single packet sending
         self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        
+
         self.socket.settimeout(2.0)
         self.socket.connect((self.ip, self.port))
         self._running = True
@@ -32,9 +35,16 @@ class MordomusTransport:
         threading.Thread(target=self._sender_loop, daemon=True).start()
         threading.Thread(target=self._receiver_loop, daemon=True).start()
 
+        # Send the boot command as soon as the connection is up
+        self.send_raw(self.BOOT_COMMAND, meta={"boot": True})
+
     def send_command(self, dev_id: int, val: int, meta: dict = None):
         """Builds 3-byte frame [0xAA, ID, VALUE] and enqueues it."""
         frame = bytes([0xAA, dev_id, val])
+        self.cmd_queue.put((frame, meta))
+
+    def send_raw(self, frame: bytes, meta: dict = None):
+        """Enqueues a pre-built frame as-is, bypassing the [0xAA, ID, VALUE] wrapping."""
         self.cmd_queue.put((frame, meta))
 
     def _sender_loop(self):
