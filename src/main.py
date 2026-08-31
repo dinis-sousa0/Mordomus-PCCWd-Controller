@@ -10,6 +10,7 @@ def main():
     #extract configuration
     ws_ip = cfg.get("waveshare", {}).get("ip", "192.168.1.200") #fallback value
     ws_port = cfg.get("waveshare", {}).get("port", 4196) #fallback value
+    ws_reconnect_delay = cfg.get("waveshare", {}).get("reconnect_delay", 5.0) #fallback value
 
     mq_broker = cfg.get("mqtt", {}).get("broker", "localhost") #fallback value
     mq_port = cfg.get("mqtt", {}).get("port", 1883) #fallback value
@@ -22,7 +23,12 @@ def main():
     mappings = cfg.get("mappings", {})
 
     #TCP Layer
-    transport = MordomusTransport(ip=ws_ip, port=ws_port, inter_frame_delay=0.10) #delay between commands
+    transport = MordomusTransport(
+        ip=ws_ip,
+        port=ws_port,
+        inter_frame_delay=0.10,  #delay between commands
+        reconnect_delay=ws_reconnect_delay,
+    )
     transport.connect()
 
     #MQTT Broker Layer

@@ -1,6 +1,7 @@
 waveshare:
   ip: "192.168.1.200"    # Waveshare RS232-Eth bridge IP address
   port: 4196             # Correspondent IP port
+  reconnect_delay: 5     # Seconds to wait before retrying a dropped/failed connection
 
 mqtt:
   broker: "localhost"    # IP of Mosquitto broker on Ubuntu
