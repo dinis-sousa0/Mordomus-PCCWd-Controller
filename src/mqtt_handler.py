@@ -152,8 +152,14 @@ class HomeAssistantMQTT:
                 val = 0x64 if payload == "OPEN" else 0x01
             elif action == "set_position":
                 val = max(1, min(100, int(payload)))
+
+            # fix for 1% position error
+            ha_position = 0 if val == 0x01 else val
+
             self.client.publish(
-                f"mordomus/blind/{dev_id}/position", val, retain=True
+                f"mordomus/blind/{dev_id}/position",
+                ha_position,
+                retain=True,
             )
 
         # Send via transport queue
