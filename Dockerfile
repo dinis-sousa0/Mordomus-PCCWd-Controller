@@ -2,12 +2,15 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Disable stdout buffering so logs render in real-time in Docker
-ENV PYTHONUNBUFFERED=1
-
+# Install pyyaml dependency
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Copy script and configuration folder 
+COPY . /app/
 
-CMD ["python", "mordomus_bridge.py"]
+# Ensure Python output prints immediately to stdout
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app/src
+
+CMD ["python", "src/main.py"]
