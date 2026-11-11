@@ -1,11 +1,8 @@
 import json
+
 import paho.mqtt.client as mqtt
 
-ACTIONS = {
-    0x01: "single_press",
-    0x02: "double_press",
-    0x03: "long_press"
-}
+ACTIONS = {0x01: "single_press", 0x02: "double_press", 0x03: "long_press"}
 
 MORDOMUS_GATEWAY_DEVICE = {
     "identifiers": ["mordomus_gateway_main"],
@@ -16,8 +13,18 @@ MORDOMUS_GATEWAY_DEVICE = {
 
 
 class HomeAssistantMQTT:
-
-    def __init__(self, broker: str, port: int, user: str, password: str, lights: dict, blinds: dict, inputs: dict, mappings: dict, transport):
+    def __init__(
+        self,
+        broker: str,
+        port: int,
+        user: str,
+        password: str,
+        lights: dict,
+        blinds: dict,
+        inputs: dict,
+        mappings: dict,
+        transport,
+    ):
         self.broker = broker
         self.port = port
         self.lights = lights
@@ -46,7 +53,7 @@ class HomeAssistantMQTT:
     def _publish_discovery(self):
         print("[MQTT] Publishing Home Assistant Auto-Discovery entities...")
 
-        #register Main Gateway Status Diagnostic Entity, to make sure parent via_device exists
+        # register Main Gateway Status Diagnostic Entity, to make sure parent via_device exists
         gw_topic = "homeassistant/sensor/mordomus_gateway/config"
         gw_payload = {
             "name": "Gateway Status",
@@ -65,7 +72,7 @@ class HomeAssistantMQTT:
                 continue
             topic = f"homeassistant/light/mordomus_{dev_id}/config"
             payload = {
-                "name": None,  #setting name to None causes HA to take the sub-device name cleanly
+                "name": None,  # setting name to None causes HA to take the sub-device name cleanly
                 "unique_id": f"mordomus_light_{dev_id}",
                 "command_topic": f"mordomus/light/{dev_id}/set",
                 "state_topic": f"mordomus/light/{dev_id}/state",
@@ -79,7 +86,7 @@ class HomeAssistantMQTT:
                     "via_device": "mordomus_gateway_main",
                 },
             }
-            self.client.publish(topic, "", retain=True) #purge old entities
+            self.client.publish(topic, "", retain=True)  # purge old entities
             self.client.publish(topic, json.dumps(payload), retain=True)
 
         # Discover Blinds
@@ -103,7 +110,7 @@ class HomeAssistantMQTT:
                     "via_device": "mordomus_gateway_main",
                 },
             }
-            self.client.publish(topic, "", retain=True) #purge old entities
+            self.client.publish(topic, "", retain=True)  # purge old entities
             self.client.publish(topic, json.dumps(payload), retain=True)
 
         # Discover Inputs/Switches
@@ -124,7 +131,7 @@ class HomeAssistantMQTT:
                     "via_device": "mordomus_gateway_main",
                 },
             }
-            self.client.publish(topic, "", retain=True) #purge old entities
+            self.client.publish(topic, "", retain=True)  # purge old entities
             self.client.publish(topic, json.dumps(payload), retain=True)
 
     def _on_connect(self, client, userdata, flags, rc):
@@ -144,9 +151,7 @@ class HomeAssistantMQTT:
             val = 0x64 if payload == "ON" else 0x01
             # Track state internally and publish to HA
             self.light_states[dev_id] = payload
-            self.client.publish(
-                f"mordomus/light/{dev_id}/state", payload, retain=True
-            )
+            self.client.publish(f"mordomus/light/{dev_id}/state", payload, retain=True)
         elif device_type == "blind":
             if action == "set":
                 val = 0x64 if payload == "OPEN" else 0x01
@@ -176,11 +181,11 @@ class HomeAssistantMQTT:
             if event_type and dev_id in self.inputs:
                 print(f"[TCP IN] Input {dev_id} triggered: {event_type}")
 
-                #publish HA Event entity
+                # publish HA Event entity
                 payload = json.dumps({"event_type": event_type})
                 self.client.publish(f"mordomus/input/{dev_id}/event", payload)
 
-                #Check input mapping for this specific trigger action
+                # Check input mapping for this specific trigger action
                 if dev_id in self.mappings:
                     btn_mapping = self.mappings[dev_id]
                     target_light_id = None
@@ -188,7 +193,7 @@ class HomeAssistantMQTT:
                     if isinstance(btn_mapping, dict):
                         target_light_id = btn_mapping.get(event_type)
                     elif isinstance(btn_mapping, int) and event_type == "single_press":
-                        #fallback for simple integer mapping defaulting to single_press
+                        # fallback for simple integer mapping defaulting to single_press
                         target_light_id = btn_mapping
 
                     # Normalize to list to support single or multiple target lights
@@ -201,8 +206,6 @@ class HomeAssistantMQTT:
                                 new_state = "OFF" if current_state == "ON" else "ON"
                                 self.light_states[tid] = new_state
 
-                                #pub2mqtt
-                                self.client.publish(
-                                    f"mordomus/light/{tid}/state", new_state, retain=True
-                                )
+                                # pub2mqtt
+                                self.client.publish(f"mordomus/light/{tid}/state", new_state, retain=True)
                                 print(f"[SYNC] Input {dev_id} ({event_type}) toggled Light {tid} -> {new_state}")

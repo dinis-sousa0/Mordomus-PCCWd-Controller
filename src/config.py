@@ -1,5 +1,6 @@
 import os
 import sys
+
 import yaml
 
 
@@ -11,7 +12,7 @@ def load_config(config_file="config.yaml"):
             config_file = alt_path
 
     try:
-        with open(config_file, "r", encoding="utf-8") as f:
+        with open(config_file, encoding="utf-8") as f:
             return yaml.safe_load(f)
     except Exception as e:
         print(f"[Config Error] Could not load {config_file}: {e}")

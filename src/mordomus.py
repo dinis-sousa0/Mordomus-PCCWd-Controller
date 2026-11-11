@@ -5,8 +5,7 @@ import time
 
 
 class MordomusTransport:
-
-    #Frame sent to the bridge right after a connection is established
+    # Frame sent to the bridge right after a connection is established
     BOOT_COMMAND = bytes([0x57, 0x01, 0x64])
 
     def __init__(self, ip: str, port: int, inter_frame_delay: float = 0.10, reconnect_delay: float = 5.0):
@@ -36,13 +35,13 @@ class MordomusTransport:
                 print(f"[TCP] Connecting to Waveshare Bridge at {self.ip}:{self.port}...")
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-                #no nagle to force single packet sending
+                # no nagle to force single packet sending
                 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
                 sock.settimeout(2.0)
                 sock.connect((self.ip, self.port))
 
-                self._buffer = bytearray()  #discard any partial frame from the previous connection
+                self._buffer = bytearray()  # discard any partial frame from the previous connection
                 self.socket = sock
                 print("[TCP] Connected successfully.")
 
@@ -103,7 +102,7 @@ class MordomusTransport:
 
                 # Parser
                 while len(self._buffer) >= 3:
-                    #Case Input Frame (0x49 0xAA [ID] [Click] 0x46) ---
+                    # Case Input Frame (0x49 0xAA [ID] [Click] 0x46) ---
                     if self._buffer[0] == 0x49:
                         if len(self._buffer) < 5:
                             break  # Wait for remaining bytes to arrive
@@ -120,8 +119,8 @@ class MordomusTransport:
                     # Unrecognized Byte
                     else:
                         self._buffer.pop(0)
-            except socket.timeout:
+            except TimeoutError:
                 continue
             except Exception as e:
                 print(f"[TCP RECV ERROR] {e}")
-                return  #let the supervisor close the socket and reconnect
+                return  # let the supervisor close the socket and reconnect
