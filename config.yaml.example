@@ -12,7 +12,7 @@ mqtt:
 # ID blinds
 blinds:
   1 : "Example blind 1"
-  2 : "Example blind 2
+  2 : "Example blind 2"
 
 
 # ID lights

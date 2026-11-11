@@ -22,3 +22,15 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "deps(docker)"
+
+  # GitHub Actions used in .github/workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "deps(actions)"

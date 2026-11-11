@@ -1,41 +1,30 @@
 import csv
 import os
+
 import yaml
 
-ACTION_MAP = {
-    "1": "single_press",
-    "2": "double_press",
-    "3": "long_press"
-}
+ACTION_MAP = {"1": "single_press", "2": "double_press", "3": "long_press"}
 
 # Base config template used if no config.yaml exists
 DEFAULT_CONFIG = {
-    "waveshare": {
-        "ip": "192.168.1.200",
-        "port": 4196
-    },
-    "mqtt": {
-        "broker": "localhost",
-        "port": 1883,
-        "username": "",
-        "password": ""
-    },
+    "waveshare": {"ip": "192.168.1.200", "port": 4196},
+    "mqtt": {"broker": "localhost", "port": 1883, "username": "", "password": ""},
     "blinds": {},
     "lights": {},
     "inputs": {},
-    "mappings": {}
+    "mappings": {},
 }
 
+
 def prompt_val(label, default_val):
-    #help prompt if needed
+    # help prompt if needed
     val = input(f"Enter {label} [{default_val}]: ").strip()
     return val if val != "" else default_val
 
+
 def convert_csv_to_yaml(
-        filepath_input="mods_input.csv",
-        filepath_output="mods_output.csv",
-        filepath_func="mods_input_func.csv"
-        ):
+    filepath_input="mods_input.csv", filepath_output="mods_output.csv", filepath_func="mods_input_func.csv"
+):
 
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
     PARENT_DIR = os.path.dirname(SCRIPT_DIR)
@@ -44,7 +33,7 @@ def convert_csv_to_yaml(
     base_config = DEFAULT_CONFIG.copy()
     if os.path.exists(DEFAULT_OUTPUT):
         try:
-            with open(DEFAULT_OUTPUT, "r", encoding="utf-8") as f:
+            with open(DEFAULT_OUTPUT, encoding="utf-8") as f:
                 existing = yaml.safe_load(f)
                 if isinstance(existing, dict):
                     base_config.update(existing)
@@ -66,22 +55,18 @@ def convert_csv_to_yaml(
     mq_pass = prompt_val("MQTT Password", mq_curr.get("password", ""))
 
     # Write network configuration back to dictionary
-    base_config["waveshare"] = {
-        "ip": ws_ip,
-        "port": int(ws_port) if str(ws_port).isdigit() else ws_port
-    }
+    base_config["waveshare"] = {"ip": ws_ip, "port": int(ws_port) if str(ws_port).isdigit() else ws_port}
     base_config["mqtt"] = {
         "broker": mq_broker,
         "port": int(mq_port) if str(mq_port).isdigit() else mq_port,
         "username": mq_user,
-        "password": mq_pass
+        "password": mq_pass,
     }
-
 
     prompt_input = input(f"Enter the input CSV file name [{filepath_input}]: ").strip()
     prompt_output = input(f"Enter the input functions CSV file name [{filepath_output}]: ").strip()
     prompt_func = input(f"Enter the input functions CSV file name [{filepath_func}]: ").strip()
-    if prompt_input :
+    if prompt_input:
         filepath_input = prompt_input
     if prompt_output:
         filepath_output = prompt_output
@@ -89,17 +74,17 @@ def convert_csv_to_yaml(
         filepath_func = prompt_func
 
     lights = {}
-    blinds= {}
+    blinds = {}
     inputs = {}
     mappings = {}
 
     try:
-        with open(filepath_input, mode="r", encoding="iso-8859-1") as f:
+        with open(filepath_input, encoding="iso-8859-1") as f:
             reader = csv.DictReader(f, delimiter=";")
-            
+
             for row in reader:
-                #skip useless columns
-                if row.get("Estado")!="True":
+                # skip useless columns
+                if row.get("Estado") != "True":
                     continue
 
                 raw_adde = row["ADDE"].strip()
@@ -116,14 +101,13 @@ def convert_csv_to_yaml(
         print(f"[ERROR] Could not find CSV file '{filepath_input}'.")
         return
 
-
     try:
-        with open(filepath_output, mode="r", encoding="iso-8859-1") as f:
+        with open(filepath_output, encoding="iso-8859-1") as f:
             reader = csv.DictReader(f, delimiter=";")
-            
+
             for row in reader:
-                #skip useless columns
-                if row.get("Estado")!="True":
+                # skip useless columns
+                if row.get("Estado") != "True":
                     continue
 
                 raw_adde = row["ADDE"].strip()
@@ -145,12 +129,11 @@ def convert_csv_to_yaml(
     except FileNotFoundError:
         print(f"[ERROR] Could not find CSV file '{filepath_output}'.")
         return
-    
 
     try:
-        with open(filepath_func, mode="r", encoding="iso-8859-1") as f:
+        with open(filepath_func, encoding="iso-8859-1") as f:
             reader = csv.DictReader(f, delimiter=";")
-            
+
             for row in reader:
                 # Skip empty rows or missing columns
                 if not row.get("Adde") or not row.get("Out1"):
@@ -192,7 +175,7 @@ def convert_csv_to_yaml(
         print(f"[ERROR] Could not find CSV file '{filepath_func}'.")
         return
 
-    #convert into the config file for write
+    # convert into the config file for write
     base_config["blinds"] = blinds
     base_config["lights"] = lights
     base_config["inputs"] = inputs
