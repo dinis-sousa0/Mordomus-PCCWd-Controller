@@ -70,7 +70,7 @@ To find input IDs, monitor the serial stream while physically pressing wall butt
 ---
 
 ### 4. Updating Configuration
-Once all required IDs are mapped out, create a `config.yaml` file (you can copy `config.example.yaml`) and enter manually enter the IDs and respective names.
+Once all required IDs are mapped out, create a `config.yaml` file (you can copy `config.yaml.example`) and manually enter the IDs and respective names.
 
 
 ## Known Issues
