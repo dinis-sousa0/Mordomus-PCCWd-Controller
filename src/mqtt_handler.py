@@ -102,6 +102,7 @@ class HomeAssistantMQTT:
                 "set_position_topic": f"mordomus/blind/{dev_id}/set_position",
                 "position_open": 100,
                 "position_closed": 0,
+                "payload_stop": None,  # the PCCWd has no stop command, so hide HA's stop button
                 "device": {
                     "identifiers": [f"mordomus_blind_{dev_id}"],
                     "name": f"Persiana {name}",
@@ -154,9 +155,21 @@ class HomeAssistantMQTT:
             self.client.publish(f"mordomus/light/{dev_id}/state", payload, retain=True)
         elif device_type == "blind":
             if action == "set":
-                val = 0x64 if payload == "OPEN" else 0x01
+                if payload == "OPEN":
+                    val = 0x64
+                elif payload == "CLOSE":
+                    val = 0x01
+                else:
+                    # e.g. STOP: the hardware can't stop mid-travel, and treating it as
+                    # anything else would move the blind, so ignore it
+                    print(f"[MQTT] Ignoring unsupported blind command {payload!r} for blind {dev_id}")
+                    return
             elif action == "set_position":
-                val = max(1, min(100, int(payload)))
+                try:
+                    val = max(1, min(100, int(payload)))
+                except ValueError:
+                    print(f"[MQTT] Ignoring invalid blind position {payload!r} for blind {dev_id}")
+                    return
 
             # fix for 1% position error
             ha_position = 0 if val == 0x01 else val

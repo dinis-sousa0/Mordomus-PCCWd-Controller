@@ -4,6 +4,30 @@ import threading
 import time
 
 
+def extract_frames(buffer: bytearray) -> list[bytes]:
+    """Pulls every complete input frame (0x49 0xAA [ID] [Click] 0x46) out of
+    buffer, mutating it in place. Unrecognized bytes are discarded one at a
+    time to resynchronise; an incomplete trailing frame is left in the buffer
+    until more bytes arrive."""
+    frames = []
+    while len(buffer) >= 3:
+        if buffer[0] == 0x49:
+            if len(buffer) < 5:
+                break  # Wait for remaining bytes to arrive
+
+            if buffer[1] == 0xAA and buffer[4] == 0x46:
+                frames.append(bytes(buffer[:5]))
+                del buffer[:5]
+            else:
+                # Invalid sync sequence, drop 1 byte
+                del buffer[0]
+
+        # Unrecognized Byte
+        else:
+            del buffer[0]
+    return frames
+
+
 class MordomusTransport:
     # Frame sent to the bridge right after a connection is established
     BOOT_COMMAND = bytes([0x57, 0x01, 0x64])
@@ -100,25 +124,9 @@ class MordomusTransport:
 
                 self._buffer.extend(data)
 
-                # Parser
-                while len(self._buffer) >= 3:
-                    # Case Input Frame (0x49 0xAA [ID] [Click] 0x46) ---
-                    if self._buffer[0] == 0x49:
-                        if len(self._buffer) < 5:
-                            break  # Wait for remaining bytes to arrive
-
-                        if self._buffer[1] == 0xAA and self._buffer[4] == 0x46:
-                            frame = bytes(self._buffer[:5])
-                            self._buffer = self._buffer[5:]
-                            if self.on_telemetry_callback:
-                                self.on_telemetry_callback(frame)
-                        else:
-                            # Invalid sync sequence, drop 1 byte
-                            self._buffer.pop(0)
-
-                    # Unrecognized Byte
-                    else:
-                        self._buffer.pop(0)
+                for frame in extract_frames(self._buffer):
+                    if self.on_telemetry_callback:
+                        self.on_telemetry_callback(frame)
             except TimeoutError:
                 continue
             except Exception as e:
