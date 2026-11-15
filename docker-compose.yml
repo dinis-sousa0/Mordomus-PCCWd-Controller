@@ -1,0 +1,8 @@
+services:
+  mordomus-bridge:
+    build: .
+    container_name: mordomus-bridge
+    restart: unless-stopped
+    volumes:
+      # config.yaml lives in the repo root and is mounted read-only, not baked into the image
+      - ./config.yaml:/app/config.yaml:ro
